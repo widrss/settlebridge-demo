@@ -221,30 +221,29 @@ def render_task_card(task: dict, show_full: bool = True) -> None:
         f"<li style='margin-bottom:6px;'>{c}</li>"
         for c in task["acceptance_criteria"]
     )
-    body = f"""
-    <div class="sb-card">
-        <div class="sb-card-title">📋 Task Request — {task['task_id']}</div>
-        <div style="font-size:1.05rem;font-weight:600;color:#e0e0ff;margin-bottom:8px;">
-            {task['title']}
-        </div>
-        <div class="sb-card-body">{task['description']}</div>
-    """
-    if show_full:
-        body += f"""
-        <div style="margin-top:14px;">
-            <div class="sb-card-title" style="margin-bottom:6px;">Acceptance Criteria</div>
-            <ul style="margin:0;padding-left:18px;color:#c0c0d8;font-size:0.88rem;line-height:1.8;">
-                {criteria_html}
-            </ul>
-        </div>
-        <div style="margin-top:14px;">
-            <span class="badge badge-blue">Budget: ${task['budget']:.0f} {task['currency']}</span>
-            &nbsp;
-            <span class="badge badge-gray">Buyer: {task['buyer_agent']}</span>
-        </div>
-        """
-    body += "</div>"
-    st.markdown(body, unsafe_allow_html=True)
+    # Build as a single contiguous string — no blank lines between chunks, which would
+    # cause the Markdown parser to exit HTML mode and display subsequent content as code.
+    criteria_section = (
+        f'<div style="margin-top:14px;">'
+        f'<div class="sb-card-title" style="margin-bottom:6px;">Acceptance Criteria</div>'
+        f'<ul style="margin:0;padding-left:18px;color:#c0c0d8;font-size:0.88rem;line-height:1.8;">'
+        f'{criteria_html}'
+        f'</ul></div>'
+        f'<div style="margin-top:14px;">'
+        f'<span class="badge badge-blue">Budget: ${task["budget"]:.0f} {task["currency"]}</span>'
+        f'&nbsp;'
+        f'<span class="badge badge-gray">Buyer: {task["buyer_agent"]}</span>'
+        f'</div>'
+    ) if show_full else ""
+    st.markdown(
+        f'<div class="sb-card">'
+        f'<div class="sb-card-title">📋 Task Request — {task["task_id"]}</div>'
+        f'<div style="font-size:1.05rem;font-weight:600;color:#e0e0ff;margin-bottom:8px;">{task["title"]}</div>'
+        f'<div class="sb-card-body">{task["description"]}</div>'
+        f'{criteria_section}'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -283,13 +282,11 @@ def render_deliverable(deliverable: dict, status: str | None = None) -> None:
     text_html = "".join(result)
 
     st.markdown(
-        f"""
-        <div class="sb-card">
-            <div class="sb-card-title">📄 Deliverable Received</div>
-            <div class="sb-card-body" style="font-size:0.85rem;">{text_html}</div>
-            {badge_html}
-        </div>
-        """,
+        f'<div class="sb-card">'
+        f'<div class="sb-card-title">&#128196; Deliverable Received</div>'
+        f'<div class="sb-card-body" style="font-size:0.85rem;">{text_html}</div>'
+        f'{badge_html}'
+        f'</div>',
         unsafe_allow_html=True,
     )
 
@@ -321,24 +318,23 @@ def render_payment_panel(task: dict, status: str, timestamp: str = "") -> None:
         status_label = ""
         color = "#c0c0d8"
 
-    ts_html = f'<div style="font-size:0.75rem;color:#666688;margin-top:4px;">{timestamp}</div>' if timestamp else ""
-
+    ts_html = (
+        f'<div style="font-size:0.75rem;color:#666688;margin-top:4px;">{timestamp}</div>'
+        if timestamp else ""
+    )
     st.markdown(
-        f"""
-        <div class="sb-card">
-            <div class="sb-card-title">💳 Payment</div>
-            <div class="payment-box">
-                <div style="font-size:0.78rem;color:#888899;">Amount</div>
-                <div class="payment-amount" style="color:{color};">${task['budget']:.2f}</div>
-                <div style="font-size:0.78rem;color:#888899;">Status: <strong style="color:{color};">{status_label}</strong></div>
-                {ts_html}
-                <div style="margin-top:4px;font-size:0.72rem;color:#555577;">
-                    Buyer: {task['buyer_agent']} &nbsp;|&nbsp; Task: {task['task_id']}
-                </div>
-            </div>
-            <div style="margin-top:10px;">{pill}</div>
-        </div>
-        """,
+        f'<div class="sb-card">'
+        f'<div class="sb-card-title">💳 Payment</div>'
+        f'<div class="payment-box">'
+        f'<div style="font-size:0.78rem;color:#888899;">Amount</div>'
+        f'<div class="payment-amount" style="color:{color};">${task["budget"]:.2f}</div>'
+        f'<div style="font-size:0.78rem;color:#888899;">Status: <strong style="color:{color};">{status_label}</strong></div>'
+        f'{ts_html}'
+        f'<div style="margin-top:4px;font-size:0.72rem;color:#555577;">'
+        f'Buyer: {task["buyer_agent"]} &nbsp;|&nbsp; Task: {task["task_id"]}'
+        f'</div></div>'
+        f'<div style="margin-top:10px;">{pill}</div>'
+        f'</div>',
         unsafe_allow_html=True,
     )
 
@@ -452,36 +448,34 @@ def render_scoring_panel(results: list[dict] | None = None, in_progress: bool = 
         )
         return
 
-    rows_html = ""
+    rows = []
     for r in results:
         icon = "✅" if r["result"] == "PASS" else "❌"
         color = "#4ade80" if r["result"] == "PASS" else "#ff6b6b"
-        rows_html += f"""
-        <div class="score-row">
-            <span class="score-icon">{icon}</span>
-            <div>
-                <div style="color:{color};font-weight:600;">{r['criterion']}</div>
-                <div class="score-note">{r['note']}</div>
-            </div>
-        </div>
-        """
+        rows.append(
+            f'<div class="score-row">'
+            f'<span class="score-icon">{icon}</span>'
+            f'<div>'
+            f'<div style="color:{color};font-weight:600;">{r["criterion"]}</div>'
+            f'<div class="score-note">{r["note"]}</div>'
+            f'</div></div>'
+        )
+    rows_html = "".join(rows)
 
     passed = sum(1 for r in results if r["result"] == "PASS")
     total = len(results)
     overall_badge = (
-        '<span class="badge badge-green">✓ Delivery Verified: Meets Criteria</span>'
+        '<span class="badge badge-green">&#10003; Delivery Verified: Meets Criteria</span>'
         if passed == total
-        else '<span class="badge badge-red">✗ Delivery Rejected: Below Standard</span>'
+        else '<span class="badge badge-red">&#10007; Delivery Rejected: Below Standard</span>'
     )
 
     st.markdown(
-        f"""
-        <div class="sb-card">
-            <div class="sb-card-title">⚖ Scoring Result — {passed}/{total} Criteria Met</div>
-            {rows_html}
-            <div style="margin-top:12px;">{overall_badge}</div>
-        </div>
-        """,
+        f'<div class="sb-card">'
+        f'<div class="sb-card-title">&#9878; Scoring Result &mdash; {passed}/{total} Criteria Met</div>'
+        f'{rows_html}'
+        f'<div style="margin-top:12px;">{overall_badge}</div>'
+        f'</div>',
         unsafe_allow_html=True,
     )
 
