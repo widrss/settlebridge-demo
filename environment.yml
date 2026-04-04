@@ -10,4 +10,4 @@ dependencies:
   - pytest
   - python-dotenv
   - pip:
-      - -e ".[dev]"
+      - -e ".[dev,demo]"
